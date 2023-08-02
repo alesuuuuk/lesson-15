@@ -1,0 +1,112 @@
+import telebot
+
+from telebot import types
+
+bot = telebot.TeleBot("6526103323:AAGSPm_w5AcbaXkP9WjsT6VS3UHxsy90AMk")
+users = {}
+print("__start bot__")
+
+
+def simple_numbers(star_value, end_value):
+    simple_num = []
+    for i in range(star_value, end_value):
+        flag = True
+        for dil in range(star_value, end_value):
+            if dil != 1 and dil < i:
+                result = i % dil
+                if result == 0:
+                    flag = False
+                    break
+
+            if dil >= i:
+                break
+        if flag:
+            simple_num.append(i)
+
+    return simple_num
+
+
+def get_user_name(msg):
+    cid = msg.chat.id
+    txt = msg.text
+    users[f"{cid}"] = {}
+    users[f"{cid}"]["name"] = txt
+    mess = bot.send_message(cid, "Enter your age: ")
+    bot.register_next_step_handler(mess, get_user_age)
+
+
+def get_user_age(msg):
+    cid = msg.chat.id
+    txt = msg.text
+    users[f"{cid}"]["age"] = txt
+    print(users)
+    bot.send_message(cid, "Thanks!", reply_markup=main_reply_menu())
+
+
+def main_reply_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.row(types.KeyboardButton("🦆inline menu"), types.KeyboardButton('🦆v'), types.KeyboardButton('🦆d'))
+    markup.row(types.KeyboardButton("🦆new_menu"), types.KeyboardButton("/start"),
+               types.KeyboardButton("прості числа🦆"), types.KeyboardButton("Input your name"))
+    return markup
+
+
+def other_menu():
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    btn_one = types.KeyboardButton("BTN - 1")
+    btn_two = types.KeyboardButton("back")
+    markup.row(btn_one, btn_two)
+    return markup
+
+
+# INLINE MENU
+
+
+def inline_btn():
+    kb = types.InlineKeyboardMarkup()
+    btn_one = types.InlineKeyboardButton("BTN-1", callback_data='btn-1')
+    kb.row(btn_one, btn_one)
+    kb.row(btn_one)
+    return kb
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def inline_menu(call):
+    cid = call.message.chat.id
+    data = call.data
+    if data == "btn-1":
+        bot.send_message(cid, "ouo uoui niga")
+
+
+@bot.message_handler(commands=['start', 'help'])
+def send_welcome(message):
+    bot.reply_to(message, "Howdy, how are you doing?")
+    cid = message.chat.id
+    bot.send_message(cid, "Hello!!!", reply_markup=main_reply_menu())
+
+
+@bot.message_handler(func=lambda message: True)
+def menu(message):
+    cid = message.chat.id
+    if message.text == "прості числа🦆":
+        numbers = simple_numbers(1, 100)
+        temp_text = "<b>Список простих чисел:</b> \n\n"
+        for num in numbers:
+            temp_text += f"{num} "
+        bot.send_message(cid, temp_text, parse_mode='html')
+
+    elif message.text == "🦆new_menu":
+        bot.send_message(cid, "new menu", reply_markup=other_menu())
+    elif message.text == "back":
+        bot.send_message(cid, message.text, reply_markup=main_reply_menu())
+    elif message.text == "🦆inline menu":
+        bot.send_message(cid, "🦆", reply_markup=inline_btn())
+    elif message.text == "ask me":
+        mess = bot.send_message(cid, "Input your name")
+        bot.register_next_step_handler(mess, get_user_name)
+    else:
+        bot.reply_to(message, message.text)
+    print(message.text)
+
+
+bot.infinity_polling()
